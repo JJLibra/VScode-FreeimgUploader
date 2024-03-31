@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yzr0512/vscode-paste-picbed.git"
+    "url": "https://github.com/JJLibra/freeimg-upload-plugin.git"
   },
   "activationEvents": [
     "onLanguage:markdown"
