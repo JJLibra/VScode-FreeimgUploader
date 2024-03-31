@@ -1,7 +1,7 @@
 {
-  "name": "freeimg-uploader",
+  "name": "Freeimg-uploader",
   "displayName": "Freeimg-uploader",
-  "description": "A plug-in that connects to the FreeIMG image bed.",
+  "description": "Interconnect with the VSCode plug-in of FreeIMG Graph Bed",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.87.0"
@@ -13,7 +13,7 @@
   "main": "./extension.js",
   "contributes": {
     "commands": [{
-      "command": "freeimg-uploader.helloWorld",
+      "command": "Freeimg-uploader.helloWorld",
       "title": "Hello World"
     }]
   },
