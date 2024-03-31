@@ -38,24 +38,21 @@ var folderPath;
 var projectPath;
 var localPath;
 var config;
-
-async function uploadToLanKong(filePath) {
+// 上传到兰空图床
+async function uploadToLsky(filePath) {
     const file = fs.createReadStream(filePath);
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('https://www.freeimg.cn/api/v1/upload', {
-        method: 'POST',
-        body: formData,
+    const response = await axios.post('https://www.freeimg.cn/api/v1/upload', formData, {
         headers: {
+            ...formData.getHeaders(),
             'Authorization': 'Bearer 284|JkbjqFTrYbgT2qsvL1TGPJHhRWvVdpvgk2IElrVx'
         }
     });
 
-    const result = await response.json();
-    return result;
+    return response.data;
 }
-
 function pastePicbedUploadSwitch() {
 	config = vscode.workspace.getConfiguration("pastePicbed");
 	if (config.onlySaveLocal) {
@@ -67,68 +64,119 @@ function pastePicbedUploadSwitch() {
 	}
 }
 function pastePicbed() {
-	config = vscode.workspace.getConfiguration("pastePicbed");
-	if (config.alioss.accessKeyId == '' || config.alioss.accessKeySecret == '' || config.alioss.bucket == '' || config.alioss.region == '') {
-		vscode.window.showErrorMessage(`accessKeyId, accessKeySecret, bucket or region can't be empty.`);
-		return;
-	}
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) return;
-	let m = moment();
-	let fileUri = editor.document.uri;
-	if (!fileUri) return;
-	if (fileUri.scheme === "untitled") {
-		vscode.window.showInformationMessage(`Can't get the path of file . You need to save the file first.`);
-		return;
-	}
-	filePath = fileUri.fsPath;
-	ext = path.extname(filePath);
-	fileName = path.basename(filePath, ext);
-	folderPath = path.dirname(filePath);
-	projectPath = vscode.workspace.rootPath;
-	if (!config.localPath) {
-		localPath = folderPath;
-	} else {
-		localPath = replaceToken(m, config.localPath);
-	}
-	var selection = editor.selection;
-	let imageName = replaceToken(m, config.imageName) + '.png';
-	let remotePath = path.posix.join(replaceToken(m, config.remotePath), imageName);
-	let imagePath = path.join(localPath, imageName)
-	createImageLocalPath(localPath, () => {
-		saveClipboardImageToFileAndGetPath(
-			imagePath,
-			(imagePath, imagePathReturnByScript) => {
-				if (imagePathReturnByScript === 'no image') {
-					console.log('no image');
-					vscode.commands.executeCommand('editor.action.clipboardPasteAction');
-					return;
-				} else if (config.onlySaveLocal) {
-					imagePath = '![](' + path.relative(folderPath, imagePath) + ')';
-					editor.edit(edit => {
-						edit.insert(selection.start, imagePath);
-					});
-				} else {
-					let client = new oss({
-						region: config.alioss.region,
-						accessKeyId: config.alioss.accessKeyId,
-						accessKeySecret: config.alioss.accessKeySecret,
-						bucket: config.alioss.bucket,
-						secure: true
-					});
-					client.put(remotePath, imagePath).then(function (response) {
-						imagePath = '![](' + response.url + ')';
-						editor.edit(edit => {
-							edit.insert(selection.start, imagePath);
-						});
-					}).catch(function (err) {
-						vscode.window.showErrorMessage(err);
-					});
-				}
-			}
-		);
-	});
+    config = vscode.workspace.getConfiguration("pastePicbed");
+    let editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+    let m = moment();
+    let fileUri = editor.document.uri;
+    if (!fileUri) return;
+    if (fileUri.scheme === "untitled") {
+        vscode.window.showInformationMessage(`Can't get the path of file . You need to save the file first.`);
+        return;
+    }
+    filePath = fileUri.fsPath;
+    ext = path.extname(filePath);
+    fileName = path.basename(filePath, ext);
+    folderPath = path.dirname(filePath);
+    projectPath = vscode.workspace.rootPath;
+    if (!config.localPath) {
+        localPath = folderPath;
+    } else {
+        localPath = replaceToken(m, config.localPath);
+    }
+    var selection = editor.selection;
+    let imageName = replaceToken(m, config.imageName) + '.png';
+    let imagePath = path.join(localPath, imageName)
+    createImageLocalPath(localPath, () => {
+        saveClipboardImageToFileAndGetPath(
+            imagePath,
+            (imagePath, imagePathReturnByScript) => {
+                if (imagePathReturnByScript === 'no image') {
+                    console.log('no image');
+                    vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+                    return;
+                } else if (config.onlySaveLocal) {
+                    imagePath = '![](' + path.relative(folderPath, imagePath) + ')';
+                    editor.edit(edit => {
+                        edit.insert(selection.start, imagePath);
+                    });
+                } else {
+                    uploadToLsky(imagePath).then(function (response) {
+                        imagePath = '![](' + response.url + ')';
+                        editor.edit(edit => {
+                            edit.insert(selection.start, imagePath);
+                        });
+                    }).catch(function (err) {
+                        vscode.window.showErrorMessage(err);
+                    });
+                }
+            }
+        );
+    });
 }
+// function pastePicbed() {
+// 	config = vscode.workspace.getConfiguration("pastePicbed");
+// 	if (config.alioss.accessKeyId == '' || config.alioss.accessKeySecret == '' || config.alioss.bucket == '' || config.alioss.region == '') {
+// 		vscode.window.showErrorMessage(`accessKeyId, accessKeySecret, bucket or region can't be empty.`);
+// 		return;
+// 	}
+// 	let editor = vscode.window.activeTextEditor;
+// 	if (!editor) return;
+// 	let m = moment();
+// 	let fileUri = editor.document.uri;
+// 	if (!fileUri) return;
+// 	if (fileUri.scheme === "untitled") {
+// 		vscode.window.showInformationMessage(`Can't get the path of file . You need to save the file first.`);
+// 		return;
+// 	}
+// 	filePath = fileUri.fsPath;
+// 	ext = path.extname(filePath);
+// 	fileName = path.basename(filePath, ext);
+// 	folderPath = path.dirname(filePath);
+// 	projectPath = vscode.workspace.rootPath;
+// 	if (!config.localPath) {
+// 		localPath = folderPath;
+// 	} else {
+// 		localPath = replaceToken(m, config.localPath);
+// 	}
+// 	var selection = editor.selection;
+// 	let imageName = replaceToken(m, config.imageName) + '.png';
+// 	let remotePath = path.posix.join(replaceToken(m, config.remotePath), imageName);
+// 	let imagePath = path.join(localPath, imageName)
+// 	createImageLocalPath(localPath, () => {
+// 		saveClipboardImageToFileAndGetPath(
+// 			imagePath,
+// 			(imagePath, imagePathReturnByScript) => {
+// 				if (imagePathReturnByScript === 'no image') {
+// 					console.log('no image');
+// 					vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+// 					return;
+// 				} else if (config.onlySaveLocal) {
+// 					imagePath = '![](' + path.relative(folderPath, imagePath) + ')';
+// 					editor.edit(edit => {
+// 						edit.insert(selection.start, imagePath);
+// 					});
+// 				} else {
+// 					let client = new oss({
+// 						region: config.alioss.region,
+// 						accessKeyId: config.alioss.accessKeyId,
+// 						accessKeySecret: config.alioss.accessKeySecret,
+// 						bucket: config.alioss.bucket,
+// 						secure: true
+// 					});
+// 					client.put(remotePath, imagePath).then(function (response) {
+// 						imagePath = '![](' + response.url + ')';
+// 						editor.edit(edit => {
+// 							edit.insert(selection.start, imagePath);
+// 						});
+// 					}).catch(function (err) {
+// 						vscode.window.showErrorMessage(err);
+// 					});
+// 				}
+// 			}
+// 		);
+// 	});
+// }
 /**
  * 返回符合 ISO 8601 格式的时间字符串
  * @param {number} expire 距离当前时间的秒数
