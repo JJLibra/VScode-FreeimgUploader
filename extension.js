@@ -51,7 +51,7 @@ async function activate(context) {
             vscode.window.showInformationMessage('已取消上传');
             return;
         }
-
+        
         const filePath = fileUri[0].fsPath;
         lastUsedFolder = path.dirname(filePath);
         const imageUrl = await uploadImage(filePath);
