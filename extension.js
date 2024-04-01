@@ -3,14 +3,24 @@ const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 
-// 配置API和Token
+// 自定义配置项
 function getConfiguration() {
     const config = vscode.workspace.getConfiguration('yourExtension');
     const apiUrl = config.get('apiUrl');
     const apiToken = config.get('apiToken');
-    return { apiUrl, apiToken };
+    const imageLinkFormat = config.get('imageLinkFormat');
+    return { apiUrl, apiToken, imageLinkFormat };
 }
 
+let { apiUrl, apiToken, imageLinkFormat } = getConfiguration();
+
+vscode.workspace.onDidChangeConfiguration((e) => {
+if (e.affectsConfiguration('Freeimg-uploader.apiUrl') || e.affectsConfiguration('Freeimg-uploader.apiToken')) {
+    ({ apiUrl, apiToken } = getConfiguration());
+}
+});
+
+// 上传图片
 async function activate(context) {
     let disposable = vscode.commands.registerCommand('extension.uploadImage', async function () {
         const fileUri = await vscode.window.showOpenDialog({
@@ -26,7 +36,7 @@ async function activate(context) {
         }
 
         const filePath = fileUri[0].fsPath;
-        const { apiUrl, apiToken } = getConfiguration();
+        // const { apiUrl, apiToken, imageLinkFormat } = getConfiguration();
 
         try {
             const formData = new FormData();
@@ -37,23 +47,18 @@ async function activate(context) {
                     'Authorization': apiToken,
                     ...formData.getHeaders(),
                 },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    // 更新进度条或状态栏信息
+                    console.log(percentCompleted);
+                },
             });
-
-            // 检查是否正确获取到了URL
-            // const imageUrl = response.data && response.data.data && response.data.data.url;
-            // if (imageUrl) {
-            //     vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
-            //     insertImageUrl(imageUrl);
-            // } else {
-            //     vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
-            //     console.log(response.data);
-            // }
 
             // 根据API响应结构调整获取URL的方式
             const imageUrl = response.data.data.links.url;
             if (imageUrl) {
                 vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
-                insertImageUrl(imageUrl); // 插入图片URL到编辑器
+                insertImageUrl(imageUrl, imageLinkFormat); // 使用用户配置的格式插入图片链接
             } else {
                 // 如果没有找到URL，给出提示
                 vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
@@ -69,15 +74,17 @@ async function activate(context) {
     context.subscriptions.push(disposable);
 }
 
-function insertImageUrl(imageUrl) {
+// 光标处插入图片链接
+function insertImageUrl(imageUrl, imageLinkFormat) {
     const editor = vscode.window.activeTextEditor;
     if (editor) {
+        const formattedImageLink = imageLinkFormat.replace('${url}', imageUrl);
         editor.edit(editBuilder => {
             const position = editor.selection.active;
-            editBuilder.insert(position, `![image](${imageUrl})`);
+            editBuilder.insert(position, formattedImageLink);
         });
-        vscode.window.showInformationMessage('图片URL已插入到编辑器。');
-    }    
+        vscode.window.showInformationMessage('图片链接已插入到编辑器。');
+    }
 }
 
 function deactivate() {}
