@@ -30,7 +30,7 @@ async function activate(context) {
         const fileUri = await vscode.window.showOpenDialog({
             canSelectMany: false,
             openLabel: '上传图片',
-            filters: { 'Images': ['png', 'jpg', 'jpeg', 'gif'] }
+            filters: { 'Images': ['png', 'jpg', 'jpeg', 'gif', 'webp'] }
         });
 
         if (!fileUri || fileUri.length === 0) {
