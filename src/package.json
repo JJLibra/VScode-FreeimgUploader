@@ -1,7 +1,9 @@
 {
+  "publisher": "JJLibra",
+  "icon": "freeimg.ico",
   "name": "Freeimg-uploader",
   "displayName": "Freeimg-uploader",
-  "description": "Interconnect with the VSCode plug-in of FreeIMG Graph Bed",
+  "description": "Interconnect with the VSCode plug-in of FREEIMG Graph Bed.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.87.0"
@@ -41,6 +43,11 @@
       }
   },
   "main": "./extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JJLibra/VScode-plugin-example.git"
+  },
+
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
