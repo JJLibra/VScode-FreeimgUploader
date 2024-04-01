@@ -13,6 +13,21 @@
     "onCommand:extension.uploadImage"
   ],
   "contributes": {
+    "configuration": {
+      "title": "Freeimg uploader",
+      "properties": {
+          "yourExtension.apiUrl": {
+              "type": "string",
+              "default": "https://www.freeimg.cn/api/v1/upload",
+              "description": "API URL for uploading images."
+          },
+          "yourExtension.apiToken": {
+              "type": "string",
+              "default": "",
+              "description": "Token for authenticating with the image upload API."
+          }
+        }
+      },
       "commands": [{
           "command": "extension.uploadImage",
           "title": "上传图片"

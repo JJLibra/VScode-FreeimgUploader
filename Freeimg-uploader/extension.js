@@ -3,9 +3,13 @@ const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 
-// 提取为配置项
-const UPLOAD_URL = 'https://www.freeimg.cn/api/v1/upload';
-const AUTH_TOKEN = 'Bearer 283|4I35l3oW5AWguA7q1xE0ztZ9h8NAirFEJSgqGUxk';
+// 配置API和Token
+function getConfiguration() {
+    const config = vscode.workspace.getConfiguration('yourExtension');
+    const apiUrl = config.get('apiUrl');
+    const apiToken = config.get('apiToken');
+    return { apiUrl, apiToken };
+}
 
 async function activate(context) {
     let disposable = vscode.commands.registerCommand('extension.uploadImage', async function () {
@@ -16,21 +20,21 @@ async function activate(context) {
         });
 
         if (!fileUri || fileUri.length === 0) {
-
             // 如果取消了文件选择，给出反馈
             vscode.window.showInformationMessage('没有选择任何文件');
             return;
         }
 
         const filePath = fileUri[0].fsPath;
+        const { apiUrl, apiToken } = getConfiguration();
 
         try {
             const formData = new FormData();
             formData.append('file', fs.createReadStream(filePath));
 
-            const response = await axios.post(UPLOAD_URL, formData, {
+            const response = await axios.post(apiUrl, formData, {
                 headers: {
-                    'Authorization': AUTH_TOKEN,
+                    'Authorization': apiToken,
                     ...formData.getHeaders(),
                 },
             });
