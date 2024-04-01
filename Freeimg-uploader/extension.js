@@ -1,92 +1,83 @@
 const vscode = require('vscode');
-const screenshot = require('screenshot-desktop'); // 导入 screenshot-desktop
-const axios = require('axios'); // 导入 axios
+const axios = require('axios');
+const FormData = require('form-data');
+const fs = require('fs');
 
-/**
- * 激活插件
- * @param {vscode.ExtensionContext} context
- */
-function activate(context) {
-    console.log('Congratulations, your extension "screenshot-uploader" is now active!');
+// 提取为配置项
+const UPLOAD_URL = 'https://www.freeimg.cn/api/v1/upload';
+const AUTH_TOKEN = 'Bearer 283|4I35l3oW5AWguA7q1xE0ztZ9h8NAirFEJSgqGUxk';
 
-    // 注册命令
-    let disposable = vscode.commands.registerCommand('extension.uploadScreenshot', async () => {
+async function activate(context) {
+    let disposable = vscode.commands.registerCommand('extension.uploadImage', async function () {
+        const fileUri = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            openLabel: '上传图片',
+            filters: { 'Images': ['png', 'jpg', 'jpeg', 'gif'] }
+        });
+
+        if (!fileUri || fileUri.length === 0) {
+
+            // 如果取消了文件选择，给出反馈
+            vscode.window.showInformationMessage('没有选择任何文件');
+            return;
+        }
+
+        const filePath = fileUri[0].fsPath;
+
         try {
-            // 获取当前编辑器
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) {
-                vscode.window.showErrorMessage('No active text editor found.');
-                return;
-            }
+            const formData = new FormData();
+            formData.append('file', fs.createReadStream(filePath));
 
-            // 获取当前窗口截图
-            const screenshotData = await takeScreenshot();
+            const response = await axios.post(UPLOAD_URL, formData, {
+                headers: {
+                    'Authorization': AUTH_TOKEN,
+                    ...formData.getHeaders(),
+                },
+            });
 
-            // 复制截图到剪贴板
-            vscode.env.clipboard.writeText(screenshotData);
-
-            // 上传截图到兰空图床
-            const imageUrl = await uploadToLankong(screenshotData);
+            // 根据API响应结构调整获取URL的方式
+            const imageUrl = response.data.data.links.url;
             if (imageUrl) {
-                vscode.window.showInformationMessage(`Screenshot uploaded successfully! Image URL: ${imageUrl}`);
+                vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
+                insertImageUrl(imageUrl); // 插入图片URL到编辑器
             } else {
-                vscode.window.showErrorMessage('Failed to upload screenshot.');
+                // 如果没有找到URL，给出提示
+                vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
+                console.log(response.data);
             }
+
         } catch (error) {
-            console.error('Error:', error.message);
-            vscode.window.showErrorMessage('An error occurred while processing the screenshot.');
+            console.error('上传失败:', error);
+            vscode.window.showErrorMessage(`图片上传失败: ${error.response ? error.response.data : error.message}`);
         }
     });
 
     context.subscriptions.push(disposable);
 }
 
-/**
- * 获取当前窗口截图
- * @returns {Promise<string>} 截图的 base64 编码
- */
-async function takeScreenshot() {
-    try {
-        // 获取截图数据
-        const screenshotData = await screenshot();
-        return screenshotData.toString('base64');
-    } catch (error) {
-        console.error('Error taking screenshot:', error.message);
-        throw error;
-    }
-}
-
-/**
- * 将截图上传到兰空图床
- * @param {string} screenshotData 截图的 base64 编码
- * @returns {Promise<string>} 图片的 URL
- */
-async function uploadToLankong(screenshotData) {
-    try {
-        // 构建请求参数
-        const formData = new FormData();
-        formData.append('file', Buffer.from(screenshotData, 'base64'));
-
-        // 发起 POST 请求
-        const response = await axios.post('https://www.freeimg.cn/api/v1/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: 'Bearer 283|4I35l3oW5AWguA7q1xE0ztZ9h8NAirFEJSgqGUxk',
-            },
+function insertImageUrl(imageUrl) {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+        editor.edit(editBuilder => {
+            const position = editor.selection.active;
+            editBuilder.insert(position, `![image](${imageUrl})`);
         });
-
-        // 解析响应
-        const imageUrl = response.data.url;
-        return imageUrl;
-    } catch (error) {
-        console.error('Error uploading screenshot:', error.message);
-        return null;
     }
 }
+
+function deactivate() {}
 
 module.exports = {
-    activate
+    activate,
+    deactivate
 };
 
-
-
+            // 检查是否正确获取到了URL
+            // const imageUrl = response.data && response.data.data && response.data.data.url;
+            // if (imageUrl) {
+            //     vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
+            //     insertImageUrl(imageUrl);
+            // } else {
+            //     vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
+            //     console.log(response.data);
+            // }
