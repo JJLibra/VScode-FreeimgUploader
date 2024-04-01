@@ -35,6 +35,16 @@ async function activate(context) {
                 },
             });
 
+            // 检查是否正确获取到了URL
+            // const imageUrl = response.data && response.data.data && response.data.data.url;
+            // if (imageUrl) {
+            //     vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
+            //     insertImageUrl(imageUrl);
+            // } else {
+            //     vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
+            //     console.log(response.data);
+            // }
+
             // 根据API响应结构调整获取URL的方式
             const imageUrl = response.data.data.links.url;
             if (imageUrl) {
@@ -48,8 +58,8 @@ async function activate(context) {
 
         } catch (error) {
             console.error('上传失败:', error);
-            vscode.window.showErrorMessage(`图片上传失败: ${error.response ? error.response.data : error.message}`);
-        }
+            vscode.window.showErrorMessage(`图片上传失败: ${error.message}`);
+        }        
     });
 
     context.subscriptions.push(disposable);
@@ -62,7 +72,8 @@ function insertImageUrl(imageUrl) {
             const position = editor.selection.active;
             editBuilder.insert(position, `![image](${imageUrl})`);
         });
-    }
+        vscode.window.showInformationMessage('图片URL已插入到编辑器。');
+    }    
 }
 
 function deactivate() {}
@@ -71,13 +82,3 @@ module.exports = {
     activate,
     deactivate
 };
-
-            // 检查是否正确获取到了URL
-            // const imageUrl = response.data && response.data.data && response.data.data.url;
-            // if (imageUrl) {
-            //     vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
-            //     insertImageUrl(imageUrl);
-            // } else {
-            //     vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
-            //     console.log(response.data);
-            // }
