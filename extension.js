@@ -29,7 +29,7 @@ async function activate(context) {
     let disposable = vscode.commands.registerCommand('extension.uploadImage', async function () {
         const fileUri = await vscode.window.showOpenDialog({
             canSelectMany: false,
-            openLabel: '上传图片',
+            openLabel: '上传',
             filters: { 'Images': ['png', 'jpg', 'jpeg', 'gif', 'webp'] }
         });
 

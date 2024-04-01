@@ -35,6 +35,14 @@
           }
         }
       },
+      "keybindings": [
+        {
+            "command": "extension.uploadImage",
+            "key": "ctrl+alt+l",
+            "when": "editorTextFocus",
+            "mac": "cmd+alt+l"
+        }
+      ],
       "commands": [{
           "command": "extension.uploadImage",
           "title": "Upload to FREEIMG"
