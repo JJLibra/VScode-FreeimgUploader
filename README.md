@@ -1,5 +1,7 @@
 # 📊 FREEIMG Markdown Image Uploader for VS Code
 
+[GitHub](https://github.com/JJLibra/vscode-FreeimgUploader)给孩子个免费的star吧
+
 FREEIMG Markdown Image Uploader是一个Visual Studio Code插件，旨在简化Markdown文档中图片的上传和插入过程。它允许你直接从编辑器中选择图片，自动将其上传到FREEIMG图床，并将生成的图片链接插入到当前的Markdown文件中。
 
 ## 特性

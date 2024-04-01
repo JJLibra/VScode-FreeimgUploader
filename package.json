@@ -4,7 +4,7 @@
   "name": "Freeimg-uploader",
   "displayName": "Freeimg-uploader",
   "description": "Interconnect with the VSCode plug-in of FREEIMG Graph Bed.",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "engines": {
     "vscode": "^1.87.0"
   },
