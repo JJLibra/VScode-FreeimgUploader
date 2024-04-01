@@ -44,7 +44,7 @@
         {
             "command": "extension.uploadImage",
             "key": "ctrl+alt+l",
-            "when": "editorTextFocus",
+            "when": "editorTextFocus && editorLangId == markdown",
             "mac": "cmd+alt+l"
         }
       ],
