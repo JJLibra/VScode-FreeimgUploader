@@ -1,6 +1,6 @@
 {
   "publisher": "JJLibra",
-  "icon": "freeimg.ico",
+  "icon": "freeimg.png",
   "name": "Freeimg-uploader",
   "displayName": "Freeimg-uploader",
   "description": "Interconnect with the VSCode plug-in of FREEIMG Graph Bed.",
