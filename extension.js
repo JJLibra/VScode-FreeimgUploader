@@ -5,9 +5,13 @@ const fs = require('fs');
 
 // 自定义配置项
 function getConfiguration() {
-    const config = vscode.workspace.getConfiguration('yourExtension');
+    const config = vscode.workspace.getConfiguration('Freeimg-uploader');
     const apiUrl = config.get('apiUrl');
-    const apiToken = config.get('apiToken');
+    let apiToken = config.get('apiToken');
+    // 确保apiToken以"Bearer "开头
+    if (!apiToken.startsWith('Bearer ')) {
+        apiToken = `Bearer ${apiToken}`;
+    }
     const imageLinkFormat = config.get('imageLinkFormat');
     return { apiUrl, apiToken, imageLinkFormat };
 }
@@ -16,7 +20,7 @@ let { apiUrl, apiToken, imageLinkFormat } = getConfiguration();
 
 vscode.workspace.onDidChangeConfiguration((e) => {
 if (e.affectsConfiguration('Freeimg-uploader.apiUrl') || e.affectsConfiguration('Freeimg-uploader.apiToken')) {
-    ({ apiUrl, apiToken } = getConfiguration());
+    ({ apiUrl, apiToken, imageLinkFormat } = getConfiguration());
 }
 });
 
@@ -46,12 +50,7 @@ async function activate(context) {
                 headers: {
                     'Authorization': apiToken,
                     ...formData.getHeaders(),
-                },
-                onUploadProgress: (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    // 更新进度条或状态栏信息
-                    console.log(percentCompleted);
-                },
+                }
             });
 
             // 根据API响应结构调整获取URL的方式
