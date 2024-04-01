@@ -18,6 +18,11 @@
     "configuration": {
       "title": "Freeimg uploader",
       "properties": {
+          "Freeimg-uploader.defaultUploadFolder": {
+            "type": "string",
+            "default": "",
+            "description": "Default folder path for uploading images."
+          },
           "Freeimg-uploader.imageLinkFormat": {
             "type": "string",
             "default": "![image](${url})",

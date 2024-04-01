@@ -2,6 +2,8 @@ const vscode = require('vscode');
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const path = require('path');
+let lastUsedFolder = undefined;
 
 // 自定义配置项
 function getConfiguration() {
@@ -13,7 +15,8 @@ function getConfiguration() {
         apiToken = `Bearer ${apiToken}`;
     }
     const imageLinkFormat = config.get('imageLinkFormat');
-    return { apiUrl, apiToken, imageLinkFormat };
+    const defaultUploadFolder = config.get('defaultUploadFolder');
+    return { apiUrl, apiToken, imageLinkFormat, defaultUploadFolder };
 }
 
 let { apiUrl, apiToken, imageLinkFormat } = getConfiguration();
@@ -27,47 +30,50 @@ if (e.affectsConfiguration('Freeimg-uploader.apiUrl') || e.affectsConfiguration(
 // 上传图片
 async function activate(context) {
     let disposable = vscode.commands.registerCommand('extension.uploadImage', async function () {
+        const defaultUploadFolder = getConfiguration().defaultUploadFolder;
+        let defaultUri = defaultUploadFolder ? vscode.Uri.file(defaultUploadFolder) : lastUsedFolder;
+
         const fileUri = await vscode.window.showOpenDialog({
             canSelectMany: false,
             openLabel: '上传',
-            filters: { 'Images': ['png', 'jpg', 'jpeg', 'gif', 'webp'] }
+            filters: { 'Images': ['png', 'jpg', 'jpeg', 'gif', 'webp'] },
+            defaultUri: defaultUri
         });
 
-        if (!fileUri || fileUri.length === 0) {
-            // 如果取消了文件选择，给出反馈
-            vscode.window.showInformationMessage('没有选择任何文件');
-            return;
-        }
+        if (fileUri && fileUri.length > 0) {
+            const filePath = fileUri[0].fsPath;
+            lastUsedFolder = vscode.Uri.file(path.dirname(filePath));
 
-        const filePath = fileUri[0].fsPath;
-        // const { apiUrl, apiToken, imageLinkFormat } = getConfiguration();
-
-        try {
-            const formData = new FormData();
-            formData.append('file', fs.createReadStream(filePath));
-
-            const response = await axios.post(apiUrl, formData, {
-                headers: {
-                    'Authorization': apiToken,
-                    ...formData.getHeaders(),
+            try {
+                const formData = new FormData();
+                formData.append('file', fs.createReadStream(filePath));
+    
+                const response = await axios.post(apiUrl, formData, {
+                    headers: {
+                        'Authorization': apiToken,
+                        ...formData.getHeaders(),
+                    }
+                });
+    
+                // 根据API响应结构调整获取URL的方式
+                const imageUrl = response.data.data.links.url;
+                if (imageUrl) {
+                    vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
+                    insertImageUrl(imageUrl, imageLinkFormat);
+                } else {
+                    // 如果没有找到URL，给出提示
+                    vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
+                    console.log(response.data);
                 }
-            });
-
-            // 根据API响应结构调整获取URL的方式
-            const imageUrl = response.data.data.links.url;
-            if (imageUrl) {
-                vscode.window.showInformationMessage(`图片上传成功: ${imageUrl}`);
-                insertImageUrl(imageUrl, imageLinkFormat); // 使用用户配置的格式插入图片链接
-            } else {
-                // 如果没有找到URL，给出提示
-                vscode.window.showErrorMessage('图片上传成功，但未找到URL。');
-                console.log(response.data);
-            }
-
-        } catch (error) {
-            console.error('上传失败:', error);
-            vscode.window.showErrorMessage(`图片上传失败: ${error.message}`);
-        }        
+    
+            } catch (error) {
+                console.error('上传失败:', error);
+                vscode.window.showErrorMessage(`图片上传失败: ${error.message}`);
+            }  
+        } else {
+            // 用户没有选择文件，认为是取消了操作
+            vscode.window.showInformationMessage('已取消上传');
+        }     
     });
 
     context.subscriptions.push(disposable);
